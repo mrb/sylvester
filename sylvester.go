@@ -2,9 +2,7 @@ package sylvester
 
 import (
 	"fmt"
-	"log"
 	"time"
-	"reflect"
 )
 
 func NewGraph() *Graph {

@@ -1,13 +1,14 @@
 package main
 
 import (
+  "log"
   "github.com/mrb/sylvester"
 )
 
 func main() {
   log.Print("starting")
 
-  graph := NewGraph()
+  graph := sylvester.NewGraph()
 
   input := graph.NewNode()
   process := graph.NewNode()
@@ -17,12 +18,6 @@ func main() {
   graph.NewEdge(process, output)
 
   graph.Activate()
-
-  a := func([]byte) []byte {
-    return nil
-  }
-
-  log.Print(reflect.TypeOf(a))
 
   log.Print("finished")
 }

@@ -1,6 +1,6 @@
 package sylvester
 
-import()
+import ()
 
 type Graph struct {
 	id      []byte
@@ -8,7 +8,7 @@ type Graph struct {
 	edges   []*Edge
 	nodemap map[*[]byte]*Node
 	edgemap map[*[]byte]*Edge
-  IDGen chan []byte
+	IDGen   chan []byte
 }
 
 func (g *Graph) NewNode() *Node {

@@ -1,6 +1,8 @@
 package sylvester
 
-import()
+import (
+	"log"
+)
 
 type Edge struct {
 	id    []byte

@@ -1,6 +1,6 @@
 package sylvester
 
-import()
+import ()
 
 const (
 	IONODE  = "ionode"
