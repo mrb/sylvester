@@ -11,7 +11,7 @@
 ```
 [AMQP] -->
 inputNode (AMQP_Node - NRead() / Write()) -->
-processNode(IONode - Read() / Write()) -->
+validatorNode(IONode - Read() / Write()) -->
 outputNode (TCP_Node - Read() - NWrite()) -->
 [TCP]
 
@@ -29,7 +29,22 @@ graph := NewGraph("kobra")
 // Declare the first node, an AMQP connected node
 input := graph.NewNode(syl.AMQP_NODE, "localhost:2322")
 
-// Create a reusable passthrough handler function for use below
+// Attach the send_body handler to the input node
+input.AddHandler(send_body)
+
+// Declare the validator node, a plain IONODE, and add the validator handler
+validator := graph.NewNode(syl.IONODE)
+validator.AddHandler(metric_validator)
+
+// Declare a TCP output node, and use the passs through handler
+output := graph.NewNode(syl.TCP_NODE, "localhost:2323")
+output.AddHandler(passthrough)
+
+// Connect the nodes with edges
+graph.NewEdge(input, validator)
+graph.NewEdge(validator, output)
+
+// Create a passthrough handler, copies input to output
 passthrough := func(input []byte) output []byte {
   copy(input, output)
   return output
@@ -41,20 +56,15 @@ send_body := func(input {}interface) output []byte {
   return output
 }
 
-// Attach the send_body handler to the input node
-input.AddHandler(send_body)
-
-// Declare the process node, a plain IONODE, and add the passthrough handler
-process := graph.NewNode(syl.IONODE)
-process.AddHandler(passthrough)
-
-// Declare a TCP output node, and use the passs through handler
-output := graph.NewNode(syl.TCP_NODE, "localhost:2323")
-output.AddHandler(passthrough)
-
-// Connect the nodes with edges
-graph.NewEdge(input, process)
-graph.NewEdge(process, output)
+// Create a handler that checks metrics format
+metric_validator := func(input []byte) output []byte{
+  if isValidMetric(input){
+    copy(input, output)
+    return output
+  } else {
+    return nil
+  }
+}
 
 // Activate the graph, let dat flow!
 graph.Activate()
