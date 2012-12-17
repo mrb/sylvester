@@ -10,6 +10,14 @@ type Edge struct {
 	bnode *Node
 }
 
+func NewEdge(anode, bnode *Node) *Edge {
+	return &Edge{
+		id:    newID(),
+		anode: anode,
+		bnode: bnode,
+	}
+}
+
 func (e *Edge) Activate() {
 	go func() {
 		for {
@@ -20,4 +28,8 @@ func (e *Edge) Activate() {
 			}
 		}
 	}()
+}
+
+func (e *Edge) Id() *[]byte {
+	return &e.id
 }

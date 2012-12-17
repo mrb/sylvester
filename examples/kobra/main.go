@@ -10,9 +10,9 @@ func main() {
 
   graph := sylvester.NewGraph()
 
-  input := graph.NewNode()
-  process := graph.NewNode()
-  output := graph.NewNode()
+  input := graph.NewNode(sylvester.TCP)
+  process := graph.NewNode(sylvester.Ionode)
+  output := graph.NewNode(sylvester.TCP)
 
   graph.NewEdge(input, process)
   graph.NewEdge(process, output)

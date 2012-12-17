@@ -1,10 +1,13 @@
 package sylvester
 
-import ()
+import (
+)
 
 const (
-	IONODE  = "ionode"
-	NIONODE = "nionode"
+	Ionode  = "ionode"
+	Nionode = "nionode"
+	TCP     = "tcp"
+	AMQP    = "amqp"
 )
 
 type Node struct {
@@ -13,6 +16,20 @@ type Node struct {
 	instructions []func([]byte) []byte
 	input        chan<- []byte
 	output       <-chan []byte
+}
+
+func (n *Node) Id() *[]byte {
+	return &n.id
+}
+
+func NewNode() *Node {
+	return &Node{
+		id:           newID(),
+		data:         nil,
+		instructions: nil,
+		input:        make(chan<- []byte, 10),
+		output:       make(<-chan []byte, 10),
+	}
 }
 
 type INode interface {

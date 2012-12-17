@@ -11,18 +11,16 @@ type Graph struct {
 	IDGen   chan []byte
 }
 
-func (g *Graph) NewNode() *Node {
-	node := &Node{
-		id:           newID(),
-		data:         nil,
-		instructions: nil,
-		input:        make(chan<- []byte, 10),
-		output:       make(<-chan []byte, 10),
-	}
+func (g *Graph) NewNode(nodeType string, nodeArgs ...string) *Node {
+	node := NewNode()
 
-	g.nodemap[&node.id] = node
+	g.nodemap[node.Id()] = node
 
 	return node
+}
+
+func (g *Graph) Id() *[]byte {
+	return &g.id
 }
 
 func (g *Graph) Activate() {
@@ -36,13 +34,9 @@ func (g *Graph) Activate() {
 }
 
 func (g *Graph) NewEdge(anode, bnode *Node) *Edge {
-	edge := &Edge{
-		id:    newID(),
-		anode: anode,
-		bnode: bnode,
-	}
+	edge := NewEdge(anode, bnode)
 
-	g.edgemap[&edge.id] = edge
+	g.edgemap[edge.Id()] = edge
 
 	return edge
 }
