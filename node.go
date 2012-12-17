@@ -43,7 +43,3 @@ type NIONode interface {
 func (n *Node) Activate() {
 
 }
-
-func (n *Node) Main() {
-	select {}
-}
