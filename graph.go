@@ -11,7 +11,7 @@ type Graph struct {
 	IDGen   chan []byte
 }
 
-func (g *Graph) NewNode(nodeType string, nodeArgs ...string) *Node {
+func (g *Graph) NewNode() *Node {
 	node := NewNode()
 
 	g.nodemap[node.Id()] = node

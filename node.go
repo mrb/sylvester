@@ -1,21 +1,19 @@
 package sylvester
 
 import (
+	"log"
 )
 
-const (
-	Ionode  = "ionode"
-	Nionode = "nionode"
-	TCP     = "tcp"
-	AMQP    = "amqp"
-)
+type DChan chan []byte
+type EChan chan []error
+type EFunc func(DChan) (DChan, EChan)
 
 type Node struct {
-	id           []byte
-	data         []byte
-	instructions []func([]byte) []byte
-	input        chan<- []byte
-	output       <-chan []byte
+	id         []byte
+	data       []byte
+	epochFuncs []EFunc
+	input      chan<- []byte
+	output     <-chan []byte
 }
 
 func (n *Node) Id() *[]byte {
@@ -24,39 +22,26 @@ func (n *Node) Id() *[]byte {
 
 func NewNode() *Node {
 	return &Node{
-		id:           newID(),
-		data:         nil,
-		instructions: nil,
-		input:        make(chan<- []byte, 10),
-		output:       make(<-chan []byte, 10),
+		id:         newID(),
+		data:       nil,
+		epochFuncs: nil,
+		input:      make(chan<- []byte, 10),
+		output:     make(<-chan []byte, 10),
 	}
 }
 
-type INode interface {
+type IONode interface {
 	Read() (data chan<- []byte, err <-chan error)
-}
-
-type ONode interface {
 	Write(instrunctions []func()) (data <-chan []byte, err <-chan error)
 }
 
-type IONode interface {
-	INode
-	ONode
-}
-
-type Networked interface {
-	Connect() (err <-chan []error)
-	NRead() (data chan<- []byte, err <-chan error)
-	NWrite(instrunctions []func()) (data <-chan []byte, err <-chan error)
-}
-
-type NIONode interface {
-	Networked
-	INode
-	ONode
+func (n *Node) AddEFunc(newEpochFunc EFunc) (err error) {
+	n.epochFuncs = append(n.epochFuncs, newEpochFunc)
+	return nil
 }
 
 func (n *Node) Activate() {
-
+	for _, efunc := range n.epochFuncs {
+		log.Printf("%s %s", n.Id(), efunc)
+	}
 }
