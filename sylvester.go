@@ -2,6 +2,7 @@ package sylvester
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 )
 
@@ -17,5 +18,5 @@ func NewGraph() *Graph {
 }
 
 func newID() []byte {
-	return []byte(fmt.Sprintf("%s", time.Now().UnixNano()))
+	return []byte(fmt.Sprintf("%d%d", time.Now().UnixNano(), rand.Intn(1000000)))
 }
