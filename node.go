@@ -1,19 +1,17 @@
 package sylvester
 
-import (
-	"log"
-)
+import ()
 
 type DChan chan []byte
 type EChan chan []error
-type EFunc func(DChan) (DChan, EChan)
+type EFunc func(DChan, EChan)
 
 type Node struct {
 	id         []byte
 	data       []byte
 	epochFuncs []EFunc
-	input      chan<- []byte
-	output     <-chan []byte
+	dataChan   DChan
+	errChan    EChan
 }
 
 func (n *Node) Id() *[]byte {
@@ -25,9 +23,13 @@ func NewNode() *Node {
 		id:         newID(),
 		data:       nil,
 		epochFuncs: nil,
-		input:      make(chan<- []byte, 10),
-		output:     make(<-chan []byte, 10),
+		dataChan:   make(DChan, 1),
+		errChan:    make(EChan, 1),
 	}
+}
+
+func (n *Node) DataChan() DChan {
+	return n.dataChan
 }
 
 type IONode interface {
@@ -41,7 +43,5 @@ func (n *Node) AddEFunc(newEpochFunc EFunc) (err error) {
 }
 
 func (n *Node) Activate() {
-	for _, efunc := range n.epochFuncs {
-		log.Printf("%s %s", n.Id(), efunc)
-	}
+	go n.epochFuncs[0](n.dataChan, n.errChan)
 }

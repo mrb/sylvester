@@ -12,29 +12,44 @@ func main() {
 	graph := syl.NewGraph()
 
 	input := graph.NewNode()
-
-	doubler := func(id syl.DChan) (od syl.DChan, e syl.EChan) {
-		nb := bytes.Map(func(r rune) rune {
-			return rune(2 * int(r))
-		}, <-id)
-
-		od <- nb
-		e <- nil
-
-		return od, e
+	byteSender := func(dc syl.DChan, ec syl.EChan) {
+		dc <- []byte{1, 2, 3, 4, 5}
+		ec <- nil
 	}
+	_ = input.AddEFunc(byteSender)
 
 	process := graph.NewNode()
+	doubler := func(dc syl.DChan, ec syl.EChan) {
+		select {
+		case data := <-dc:
+			newData := bytes.Map(func(r rune) rune {
+				return rune(2 * int(r))
+			}, data)
 
-	_ = process.AddEFunc(doubler)
+			dc <- newData
+			ec <- nil
+		}
+	}
 	_ = process.AddEFunc(doubler)
 
 	output := graph.NewNode()
+	stdOutPrinter := func(dc syl.DChan, ec syl.EChan) {
+		select {
+		case data := <-dc:
+			log.Print("output --> ", data)
+			dc <- data
+			ec <- nil
+			graph.ExitChan <- true
+		}
+	}
+	_ = output.AddEFunc(stdOutPrinter)
 
-	graph.NewEdge(input, process)
 	graph.NewEdge(process, output)
+	graph.NewEdge(input, process)
 
 	graph.Activate()
+
+	<-graph.ExitChan
 
 	log.Print("finished")
 }

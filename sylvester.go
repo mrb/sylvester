@@ -7,11 +7,12 @@ import (
 
 func NewGraph() *Graph {
 	return &Graph{
-		id:      newID(),
-		nodes:   make([]*Node, 1024),
-		edges:   make([]*Edge, 1024),
-		nodemap: make(map[*[]byte]*Node),
-		edgemap: make(map[*[]byte]*Edge),
+		id:       newID(),
+		nodes:    nil,
+		edges:    nil,
+		nodemap:  make(map[*[]byte]*Node),
+		edgemap:  make(map[*[]byte]*Edge),
+		ExitChan: make(chan bool, 1),
 	}
 }
 
