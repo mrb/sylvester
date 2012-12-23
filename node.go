@@ -2,16 +2,16 @@ package sylvester
 
 import ()
 
-type DChan chan []byte
-type EChan chan []error
-type EFunc func(DChan, EChan)
+type DataChan chan []byte
+type ErrorChan chan error
+type Event func(DataChan, ErrorChan)
 
 type Node struct {
-	id         []byte
-	data       []byte
-	epochFuncs []EFunc
-	dataChan   DChan
-	errChan    EChan
+	id        []byte
+	data      []byte
+	events    []Event
+	dataChan  DataChan
+	errorChan ErrorChan
 }
 
 func (n *Node) Id() *[]byte {
@@ -20,28 +20,24 @@ func (n *Node) Id() *[]byte {
 
 func NewNode() *Node {
 	return &Node{
-		id:         newID(),
-		data:       nil,
-		epochFuncs: nil,
-		dataChan:   make(DChan, 1),
-		errChan:    make(EChan, 1),
+		id:        newID(),
+		data:      nil,
+		events:    nil,
+		dataChan:  make(DataChan, 1),
+		errorChan: make(ErrorChan, 1),
 	}
 }
 
-func (n *Node) DataChan() DChan {
+func (n *Node) DataChan() DataChan {
 	return n.dataChan
 }
 
-type IONode interface {
-	Read() (data chan<- []byte, err <-chan error)
-	Write(instrunctions []func()) (data <-chan []byte, err <-chan error)
-}
-
-func (n *Node) AddEFunc(newEpochFunc EFunc) (err error) {
-	n.epochFuncs = append(n.epochFuncs, newEpochFunc)
+func (n *Node) AddEvent(newEvent Event) (err error) {
+	n.events = append(n.events, newEvent)
 	return nil
 }
 
 func (n *Node) Activate() {
-	go n.epochFuncs[0](n.dataChan, n.errChan)
+	// Yes, this is insane, it only handles the first handler. Fixing soon.
+	go n.events[0](n.dataChan, n.errorChan)
 }

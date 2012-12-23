@@ -1,78 +1,157 @@
 ## Sylvester
 
+Sylvester is a Go library that imagines applications that handle streams of data
+as a graph. Graphs contain nodes and edges: nodes are responsible for computation
+and connection with outside data sources and sinks, and edges are responsible for
+connections between nodes.
 
 ### Sylvester is:
 
 * An attempt to sketch a Go framework for network applications.
 * An abstraction for a certain class of applications.
+* A chance to explore Go more deeply and work on a framework.
+* Named after <a href="http://en.wikipedia.org/wiki/James_Joseph_Sylvester">James Joseph Sylvester</a>, who coined the term "graph," and was a general badass.
 
-### Kobra as a Graph:
+<a href="http://github.com/etsy/statsd">Statsd</a> is the canonical application that
+Sylvester aims to prove a clean framework for.
+
+### Statsd as a Graph:
 
 ```
-[AMQP] -->
-inputNode (AMQP_Node - NRead() / Write()) -->
-validatorNode(IONode - Read() / Write()) -->
-outputNode (TCP_Node - Read() - NWrite()) -->
-[TCP]
-
-[In brackets] means an outside service
+[External TCP] -->
+inputNode -->
+aggregatorNode -->
+outputNode -->
+[External UDP]
 ```
 
-### Current Target API
+### What's up now
 
 ```go
-// Example app - Kobra
+/*
 
-// Instantiate a graph
-graph := NewGraph("kobra")
+Sylvester uses the idea of Graphs to make it easy to create complex networking applications
+(hopefully). A Graph has nodes and edges. Nodes handle computation and edges handle
+communication betwen nodes. Included in "computation" is communication with outside data
+sources. Computation that a node is responsible for is represented by "Events," which are
+functions that conform to a specific interface and are attached to a node. All communication
+between nodes and the outside world is done with bye slices - []byte rules.
 
-// Declare the first node, an AMQP connected node
-input := graph.NewNode(syl.AMQP_NODE, "localhost:2322")
+I'm still working out the cleanest way to handle errors (one handler func for errors?),
+and this trivial example plus some netcat magic is helping me discover a lot of edge cases.
+More to come.
 
-// Attach the send_body handler to the input node
-input.AddHandler(send_body)
+*/
+package main
 
-// Declare the validator node, a plain IONODE, and add the validator handler
-validator := graph.NewNode(syl.IONODE)
-validator.AddHandler(metric_validator)
+import (
+	syl "github.com/mrb/sylvester"
+	"log"
+	"net"
+)
 
-// Declare a TCP output node, and use the passs through handler
-output := graph.NewNode(syl.TCP_NODE, "localhost:2323")
-output.AddHandler(passthrough)
+func main() {
+	// Creates a new graph. Nodes and edges will be attached to 'graph'
+	graph := syl.NewGraph()
 
-// Connect the nodes with edges
-graph.NewEdge(input, validator)
-graph.NewEdge(validator, output)
+	// The first Node is named input. Following the first node is the declaration of
+	// the first event function we're seeing - it connects to a UDP address, and then
+	// starts reading in a loop.
+	input := graph.NewNode()
+	UDPbyteReader := func(dc syl.DataChan, ec syl.ErrorChan) {
+		conn, err := TcpConnect("localhost:2322")
+		if err != nil {
+			ec <- err
+		}
 
-// Create a passthrough handler, copies input to output
-passthrough := func(input []byte) output []byte {
-  copy(input, output)
-  return output
+		data := make([]byte, 512)
+
+		for {
+			log.Print("Reading from TCP...")
+			dlen, err := conn.Read(data)
+			if err != nil {
+				ec <- err
+			}
+			log.Printf("...read %d bytes from TCP", dlen)
+
+			dc <- data[0:dlen]
+		}
+	}
+
+	// Here, we're attaching the above function to the Event. This event will get executed
+	// when the graph is activated.
+	_ = input.AddEvent(UDPbyteReader)
+
+	// This is a simple graph with two nodes and one edge. Here's the second node.
+	output := graph.NewNode()
+
+	// Note that TCPbyteWriter and UDPbyteReader have the same Function Type (they take
+	// and return the same type of parameters). This is because all event functions must
+	// conform to this signature, which gives event functions access to the Data and Event
+	// channels internal to the nodes. This allows developers using Sylvester to easily
+	// separate the work of an application from it's boilerplate. Events are the heart of
+	// a graph.
+	TCPbyteWriter := func(dc syl.DataChan, ec syl.ErrorChan) {
+		conn, err := UdpConnect("localhost:2323")
+		if err != nil {
+			ec <- err
+		}
+
+		for {
+			select {
+			case data := <-dc:
+				log.Printf("Writing %d bytes to UDP", len(data))
+				conn.Write(data)
+			}
+		}
+		graph.ExitChan <- true
+	}
+	// Attaching the TCPbytwWriter to the output node.
+	_ = output.AddEvent(TCPbyteWriter)
+
+	// One edge is necessary to connect the two nodes above. Order matters and without
+	// this edge, no data would flow!
+	graph.NewEdge(input, output)
+
+	// "Activate" means to start data flow and event running - where the fun starts!
+	graph.Activate()
+
+	// The program waits on the graph to send a bool value ot the ExitChan to signal that
+	// the program should exit.
+	<-graph.ExitChan
+	log.Print("Received Exit Signal, exiting")
 }
 
-// Create a handler function for AMQP messages that only sends the body
-send_body := func(input {}interface) output []byte {
-  output = input.(*AMQPMessage).body
-  return output
+// Connection functions
+func TcpConnect(address string) (c *net.TCPConn, err error) {
+	log.Printf("[TCP] Dialing %s", address)
+	tcpaddr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err = net.DialTCP("tcp", nil, tcpaddr)
+	if err != nil {
+		return nil, err
+	}
+
+	c.SetKeepAlive(true)
+
+	return c, nil
 }
 
-// Create a handler that checks metrics format
-metric_validator := func(input []byte) output []byte{
-  if isValidMetric(input){
-    copy(input, output)
-    return output
-  } else {
-    return nil
-  }
-}
+func UdpConnect(address string) (c *net.UDPConn, err error) {
+	log.Printf("[UDP] Dialing %s", address)
+	udpaddr, err := net.ResolveUDPAddr("udp", address)
+	if err != nil {
+		return nil, err
+	}
 
-// Activate the graph, let dat flow!
-graph.Activate()
+	c, err = net.DialUDP("udp", nil, udpaddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
 ```
-
-### Thoughts:
-
-* Need pre-parse and post-parse handler arrays for incoming network data (i.e.
-  how to send just "Body" of AMQP message without having to parse flattend []byte)
-* Still have to differentiate node types based on constants. How to handle the
-  different functionality?
