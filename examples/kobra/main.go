@@ -32,6 +32,20 @@ func main() {
 	}
 	_ = process.AddEFunc(doubler)
 
+  	processTwo := graph.NewNode()
+	doubler := func(dc syl.DChan, ec syl.EChan) {
+		select {
+		case data := <-dc:
+			newData := bytes.Map(func(r rune) rune {
+				return rune(10 + int(r))
+			}, data)
+
+			dc <- newData
+			ec <- nil
+		}
+	}
+	_ = process.AddEFunc(doubler)
+
 	output := graph.NewNode()
 	stdOutPrinter := func(dc syl.DChan, ec syl.EChan) {
 		select {
@@ -44,7 +58,8 @@ func main() {
 	}
 	_ = output.AddEFunc(stdOutPrinter)
 
-	graph.NewEdge(process, output)
+	graph.NewEdge(processTwo, output)
+  graph.NewEdge(process, processTwo)
 	graph.NewEdge(input, process)
 
 	graph.Activate()
