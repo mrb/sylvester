@@ -25,6 +25,7 @@ import (
 	syl "github.com/mrb/sylvester"
 	"log"
 	"net"
+	"os"
 )
 
 func main() {
@@ -93,10 +94,14 @@ func main() {
 	// "Activate" means to start data flow and event running - where the fun starts.
 	graph.Activate()
 
-	// The program waits on the graph to send a bool value ot the ExitChan to signal that
-	// the program should exit.
-	<-graph.ExitChan
-	log.Print("Received Exit Signal, exiting")
+	select {
+	case <-graph.ExitChan:
+		log.Print("Received Exit Signal, exiting")
+		os.Exit(0)
+	case err := <-graph.ErrChan:
+		log.Print(err)
+		os.Exit(3)
+	}
 }
 
 // Connection functions

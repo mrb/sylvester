@@ -14,6 +14,7 @@ func NewGraph() *Graph {
 		nodemap:  make(map[*[]byte]*Node),
 		edgemap:  make(map[*[]byte]*Edge),
 		ExitChan: make(chan bool, 1),
+		ErrChan:  make(chan error, 1),
 	}
 }
 

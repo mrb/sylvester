@@ -9,6 +9,7 @@ type Graph struct {
 	nodemap  map[*[]byte]*Node
 	edgemap  map[*[]byte]*Edge
 	IDGen    chan []byte
+	ErrChan  chan error
 	ExitChan chan bool
 }
 
@@ -17,15 +18,16 @@ func (g *Graph) Id() *[]byte {
 }
 
 func (g *Graph) Activate() {
+	// This graph traversal can definitely be optimized.
 	for _, node := range g.nodes {
-		node.Activate()
+		go node.Activate(g.ErrChan)
 	}
 	for _, edge := range g.edges {
-		edge.Activate()
+		go edge.Activate(g.ErrChan)
 	}
 }
 
-func (g *Graph) NewEdge(anode,bnode *Node) *Edge {
+func (g *Graph) NewEdge(anode, bnode *Node) *Edge {
 	edge := NewEdge(anode, bnode)
 
 	g.edges = append(g.edges, edge)
