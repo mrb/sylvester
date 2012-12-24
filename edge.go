@@ -5,18 +5,18 @@ import ()
 type Edge struct {
 	id    []byte
 	anode *Node
-	bnode *Node
+	bnodes []*Node
 }
 
 func (e *Edge) Id() *[]byte {
 	return &e.id
 }
 
-func NewEdge(anode, bnode *Node) *Edge {
+func NewEdge(anode *Node, bnodes []*Node) *Edge {
 	return &Edge{
 		id:    newID(),
 		anode: anode,
-		bnode: bnode,
+		bnodes: bnodes,
 	}
 }
 
@@ -25,7 +25,9 @@ func (e *Edge) Activate() {
 		for {
 			select {
 			case data := <-e.anode.dataChan:
-				e.bnode.dataChan <- data
+        for _, bnode := range e.bnodes {
+				  bnode.dataChan <- data
+        }
 			}
 		}
 	}()

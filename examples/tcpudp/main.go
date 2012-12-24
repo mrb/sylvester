@@ -57,7 +57,7 @@ func main() {
 
 	// Here, we're attaching the above function to the Event. This event will get executed
 	// when the graph is activated.
-	_ = input.AddEvent(UDPbyteReader)
+	_ = input.NewEvent(UDPbyteReader)
 
 	// This is a simple graph with two nodes and one edge. Here's the second node.
 	output := graph.NewNode()
@@ -84,7 +84,7 @@ func main() {
 		graph.ExitChan <- true
 	}
 	// Attaching the TCPbytwWriter to the output node.
-	_ = output.AddEvent(TCPbyteWriter)
+	_ = output.NewEvent(TCPbyteWriter)
 
 	// One edge is necessary to connect the two nodes above. Order matters and without
 	// this edge, no data would flow!

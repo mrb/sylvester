@@ -25,8 +25,8 @@ func (g *Graph) Activate() {
 	}
 }
 
-func (g *Graph) NewEdge(anode, bnode *Node) *Edge {
-	edge := NewEdge(anode, bnode)
+func (g *Graph) NewEdge(anode *Node, bnodes []*Node) *Edge {
+	edge := NewEdge(anode, bnodes)
 
 	g.edges = append(g.edges, edge)
 	g.edgemap[edge.Id()] = edge

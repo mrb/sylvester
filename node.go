@@ -32,7 +32,7 @@ func (n *Node) DataChan() DataChan {
 	return n.dataChan
 }
 
-func (n *Node) AddEvent(newEvent Event) (err error) {
+func (n *Node) NewEvent(newEvent Event) (err error) {
 	n.events = append(n.events, newEvent)
 	return nil
 }
