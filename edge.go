@@ -12,7 +12,15 @@ func (e *Edge) Id() *[]byte {
 	return &e.id
 }
 
-func NewEdge(anode *Node, bnodes []*Node) *Edge {
+func NewEdge(anode, bnode *Node) *Edge {
+	return &Edge{
+		id:    newID(),
+		anode: anode,
+		bnodes: []*Node{bnode},
+	}
+}
+
+func NewEdges(anode *Node, bnodes []*Node) *Edge {
 	return &Edge{
 		id:    newID(),
 		anode: anode,

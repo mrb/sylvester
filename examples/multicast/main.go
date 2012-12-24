@@ -41,7 +41,7 @@ func main() {
 	}
 	_ = outputTwo.NewEvent(stdOutFunc2)
 
-	graph.NewEdge(dataStream, []*syl.Node{outputOne, outputTwo})
+	graph.NewEdges(dataStream, []*syl.Node{outputOne, outputTwo})
 
 	graph.Activate()
 
