@@ -95,11 +95,11 @@ func main() {
 	// "Activate" means to start data flow and event running - where the fun starts.
 	graph.Activate()
 
-  // The graph's error channel is connected to each node's error channel during
-  // the Activate() call. Data sent directly to the graph's ExitChan or errors
-  // surfaced from Nodes are handled in this select, which blocks and prevents
-  // the program from terminating. In this simple setup, either one will cause
-  // the program to exit.
+	// The graph's error channel is connected to each node's error channel during
+	// the Activate() call. Data sent directly to the graph's ExitChan or errors
+	// surfaced from Nodes are handled in this select, which blocks and prevents
+	// the program from terminating. In this simple setup, either one will cause
+	// the program to exit.
 	select {
 	case <-graph.ExitChan:
 		log.Print("Received Exit Signal, exiting")
