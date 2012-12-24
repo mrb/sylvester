@@ -1,22 +1,23 @@
 /*
 
-Sylvester models programs after Graphs to make it easy (hopefully) to design and
-implement applications that route, aggregate, or otherwise deal with streams of
-data over networks.
+Sylvester models programs after Graphs to make it easy (hopefully) to design
+and implement applications that route, aggregate, or otherwise deal with
+streams of data over networks.
 
-A Graph has nodes and edges. Nodes handle computation and edges handle communication
-betwen nodes. Included in "computation" is communication with outside data
-sources. Computation that a node is responsible for is represented by "Events," which are
-functions that conform to a specific interface and are attached to a node. All communication
-between nodes and the outside world is done with bye slices - []byte rules.
+A Graph has nodes and edges. Nodes handle computation and edges handle
+communication betwen nodes. Included in "computation" is communication
+with outside datasources. Computation that a node is responsible for is
+represented by "Events," which are functions that conform to a specific
+interface and are attached to a node. All communication between nodes and
+the outside world is done with bye slices - []byte rules.
 
-I'm still working out the cleanest way to handle errors (one handler func for errors?),
-and this trivial example plus some netcat magic is helping me discover a lot of edge cases.
-More to come.
+To use this example:
 
-To use this example, start a couple `netcat` sessions (nc -lk 127.0.0.1 2322 in one console,
-nc -luk 2323 in the other), build and start this example, and type some stuff in the TCP console.
-Check out the UDP console. Chuckle. It breaks easily.
+- `nc -lk 127.0.0.1 2322` in one console
+- `nc -luk 2323` in another
+- `go build && ./tcpdup` Build and start this program
+- type some stuff in the TCP console.
+- Check out the UDP console. Chuckle. It breaks easily.
 
 */
 package main
@@ -94,6 +95,11 @@ func main() {
 	// "Activate" means to start data flow and event running - where the fun starts.
 	graph.Activate()
 
+  // The graph's error channel is connected to each node's error channel during
+  // the Activate() call. Data sent directly to the graph's ExitChan or errors
+  // surfaced from Nodes are handled in this select, which blocks and prevents
+  // the program from terminating. In this simple setup, either one will cause
+  // the program to exit.
 	select {
 	case <-graph.ExitChan:
 		log.Print("Received Exit Signal, exiting")
@@ -104,7 +110,7 @@ func main() {
 	}
 }
 
-// Connection functions
+// Connection functions - I think these will be extracted to another lib
 func TcpConnect(address string) (c *net.TCPConn, err error) {
 	log.Printf("[TCP] Dialing %s", address)
 	tcpaddr, err := net.ResolveTCPAddr("tcp", address)
