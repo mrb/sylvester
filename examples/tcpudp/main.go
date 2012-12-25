@@ -24,8 +24,8 @@ package main
 
 import (
 	syl "github.com/mrb/sylvester"
+	conn "github.com/mrb/sylvester/connections"
 	"log"
-	"net"
 	"os"
 )
 
@@ -38,7 +38,7 @@ func main() {
 	// starts reading in a loop.
 	input := graph.NewNode()
 	UDPbyteReader := func(dc syl.DataChan, ec syl.ErrorChan) {
-		conn, err := TcpConnect("localhost:2322")
+		tcp, err := conn.TcpConnect("localhost:2322")
 		if err != nil {
 			ec <- err
 		}
@@ -47,7 +47,7 @@ func main() {
 
 		for {
 			log.Print("Reading from TCP...")
-			dlen, err := conn.Read(data)
+			dlen, err := tcp.Read(data)
 			if err != nil {
 				ec <- err
 			}
@@ -71,7 +71,7 @@ func main() {
 	// separate the work of an application from it's boilerplate. Events are the heart of
 	// a graph.
 	TCPbyteWriter := func(dc syl.DataChan, ec syl.ErrorChan) {
-		conn, err := UdpConnect("localhost:2323")
+		udp, err := conn.UdpConnect("localhost:2323")
 		if err != nil {
 			ec <- err
 		}
@@ -80,7 +80,7 @@ func main() {
 			select {
 			case data := <-dc:
 				log.Printf("Writing %d bytes to UDP", len(data))
-				conn.Write(data)
+				udp.Write(data)
 			}
 		}
 		graph.ExitChan <- true
@@ -105,40 +105,12 @@ func main() {
 		log.Print("Received Exit Signal, exiting")
 		os.Exit(0)
 	case err := <-graph.ErrChan:
-		log.Print(err)
-		os.Exit(3)
+		if err == conn.ErrTCPConnection {
+			log.Print(err)
+			os.Exit(3)
+		} else {
+			log.Print(err)
+			os.Exit(3)
+		}
 	}
-}
-
-// Connection functions - I think these will be extracted to another lib
-func TcpConnect(address string) (c *net.TCPConn, err error) {
-	log.Printf("[TCP] Dialing %s", address)
-	tcpaddr, err := net.ResolveTCPAddr("tcp", address)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err = net.DialTCP("tcp", nil, tcpaddr)
-	if err != nil {
-		return nil, err
-	}
-
-	c.SetKeepAlive(true)
-
-	return c, nil
-}
-
-func UdpConnect(address string) (c *net.UDPConn, err error) {
-	log.Printf("[UDP] Dialing %s", address)
-	udpaddr, err := net.ResolveUDPAddr("udp", address)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err = net.DialUDP("udp", nil, udpaddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
 }
