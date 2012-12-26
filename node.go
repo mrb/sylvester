@@ -2,16 +2,13 @@ package sylvester
 
 import ()
 
-type DataChan chan []byte
-type ErrorChan chan error
 type Event func(DataChan, ErrorChan)
 
 type Node struct {
-	id        []byte
-	data      []byte
-	events    []Event
-	dataChan  DataChan
-	errorChan ErrorChan
+	id       []byte
+	data     []byte
+	events   []Event
+	channels *Channels
 }
 
 func (n *Node) Id() *[]byte {
@@ -20,16 +17,19 @@ func (n *Node) Id() *[]byte {
 
 func NewNode() *Node {
 	return &Node{
-		id:        newID(),
-		data:      nil,
-		events:    nil,
-		dataChan:  make(DataChan, 1),
-		errorChan: make(ErrorChan, 1),
+		id:     newID(),
+		data:   nil,
+		events: nil,
+		channels: &Channels{
+			data:    make(DataChan, 1),
+			control: make(ControlChan, 1),
+			errors:  make(ErrorChan, 1),
+		},
 	}
 }
 
 func (n *Node) DataChan() DataChan {
-	return n.dataChan
+	return n.channels.data
 }
 
 func (n *Node) NewEvent(newEvent Event) (err error) {
@@ -38,12 +38,14 @@ func (n *Node) NewEvent(newEvent Event) (err error) {
 }
 
 func (n *Node) Activate(errorChan ErrorChan) {
-	// Yes, this is insane, it only handles the first handler. Fixing soon.
-	go n.events[0](n.dataChan, n.errorChan)
+	// Currently only handles one Event.
+	go n.events[0](n.channels.data, n.channels.errors)
 
-	select {
-	case err := <-n.errorChan:
-		// Kick errors pushed onto the error channel back up to the Graph.
-		errorChan <- err
+	for {
+		select {
+		case err := <-n.channels.errors:
+			errorChan <- err
+		case _ = <-n.channels.control:
+		}
 	}
 }

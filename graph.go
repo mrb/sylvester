@@ -18,8 +18,7 @@ func (g *Graph) Id() *[]byte {
 }
 
 func (g *Graph) Activate() {
-	// This graph traversal can definitely be optimized.
-	for _, node := range g.nodes {
+	for _, node := range g.nodemap {
 		go node.Activate(g.ErrChan)
 	}
 	for _, edge := range g.edges {

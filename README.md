@@ -27,4 +27,4 @@ outputNode -->
 
 ### What's up now
 
-Check out <a href="https://github.com/mrb/sylvester/blob/master/examples/kobra/main.go">This example application</a> for the state of things now.
+Check out <a href="https://github.com/mrb/sylvester/blob/master/examples/tcpudp/main.go">This example application</a> for the state of things now.

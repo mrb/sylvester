@@ -6,6 +6,16 @@ import (
 	"time"
 )
 
+type DataChan chan []byte
+type ErrorChan chan error
+type ControlChan DataChan
+
+type Channels struct {
+	data    DataChan
+	errors  ErrorChan
+	control ControlChan
+}
+
 func NewGraph() *Graph {
 	return &Graph{
 		id:       newID(),

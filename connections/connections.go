@@ -7,15 +7,15 @@ import (
 )
 
 var (
-	ErrTCPConnection = errors.New("[TCP] connection error")
-	ErrUDPConnection = errors.New("[UDP] connection error")
+	ErrTCPConnection = errors.New("[err] TCP resolution or connection error")
+	ErrUDPConnection = errors.New("[err] UDP resolution or connection error")
 )
 
 func TcpConnect(address string) (c *net.TCPConn, err error) {
 	log.Printf("[TCP] Dialing %s", address)
 	tcpaddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
-		return nil, err
+		return nil, ErrTCPConnection
 	}
 
 	c, err = net.DialTCP("tcp", nil, tcpaddr)
@@ -32,7 +32,7 @@ func UdpConnect(address string) (c *net.UDPConn, err error) {
 	log.Printf("[UDP] Dialing %s", address)
 	udpaddr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
-		return nil, err
+		return nil, ErrUDPConnection
 	}
 
 	c, err = net.DialUDP("udp", nil, udpaddr)
