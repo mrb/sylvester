@@ -32,9 +32,9 @@ func (e *Edge) Activate(errorChan ErrorChan) {
 	go func() {
 		for {
 			select {
-			case data := <-e.anode.channels.data:
+			case data := <-e.anode.Channels.Data:
 				for _, bnode := range e.bnodes {
-					bnode.channels.data <- data
+					bnode.Channels.Data <- data
 				}
 			}
 		}

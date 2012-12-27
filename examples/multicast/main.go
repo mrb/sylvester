@@ -45,6 +45,6 @@ func main() {
 
 	graph.Activate()
 
-	<-graph.ExitChan
+	<-graph.Channels.Control
 	log.Print("Received Exit Signal, exiting")
 }

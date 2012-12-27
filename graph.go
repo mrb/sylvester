@@ -9,8 +9,7 @@ type Graph struct {
 	nodemap  map[*[]byte]*Node
 	edgemap  map[*[]byte]*Edge
 	IDGen    chan []byte
-	ErrChan  chan error
-	ExitChan chan bool
+	Channels *Channels
 }
 
 func (g *Graph) Id() *[]byte {
@@ -19,10 +18,10 @@ func (g *Graph) Id() *[]byte {
 
 func (g *Graph) Activate() {
 	for _, node := range g.nodemap {
-		go node.Activate(g.ErrChan)
+		go node.Activate(g.Channels.Errors)
 	}
 	for _, edge := range g.edges {
-		go edge.Activate(g.ErrChan)
+		go edge.Activate(g.Channels.Errors)
 	}
 }
 

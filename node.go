@@ -8,7 +8,7 @@ type Node struct {
 	id       []byte
 	data     []byte
 	events   []Event
-	channels *Channels
+	Channels *Channels
 }
 
 func (n *Node) Id() *[]byte {
@@ -20,16 +20,16 @@ func NewNode() *Node {
 		id:     newID(),
 		data:   nil,
 		events: nil,
-		channels: &Channels{
-			data:    make(DataChan, 1),
-			control: make(ControlChan, 1),
-			errors:  make(ErrorChan, 1),
+		Channels: &Channels{
+			Data:    make(DataChan, 1),
+			Control: make(ControlChan, 1),
+			Errors:  make(ErrorChan, 1),
 		},
 	}
 }
 
 func (n *Node) DataChan() DataChan {
-	return n.channels.data
+	return n.Channels.Data
 }
 
 func (n *Node) NewEvent(newEvent Event) (err error) {
@@ -39,13 +39,13 @@ func (n *Node) NewEvent(newEvent Event) (err error) {
 
 func (n *Node) Activate(errorChan ErrorChan) {
 	// Currently only handles one Event.
-	go n.events[0](n.channels.data, n.channels.errors)
+	go n.events[0](n.Channels.Data, n.Channels.Errors)
 
 	for {
 		select {
-		case err := <-n.channels.errors:
+		case err := <-n.Channels.Errors:
 			errorChan <- err
-		case _ = <-n.channels.control:
+		case _ = <-n.Channels.Control:
 		}
 	}
 }
