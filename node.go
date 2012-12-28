@@ -23,7 +23,7 @@ func NewNode() *Node {
 		Channels: &Channels{
 			Data:    make(DataChan, 1),
 			Control: make(ControlChan, 1),
-			Errors:  make(ErrorChan, 1),
+			Error:  make(ErrorChan, 1),
 		},
 	}
 }
@@ -39,11 +39,11 @@ func (n *Node) NewEvent(newEvent Event) (err error) {
 
 func (n *Node) Activate(errorChan ErrorChan) {
 	// Currently only handles one Event.
-	go n.events[0](n.Channels.Data, n.Channels.Errors)
+	go n.events[0](n.Channels.Data, n.Channels.Error)
 
 	for {
 		select {
-		case err := <-n.Channels.Errors:
+		case err := <-n.Channels.Error:
 			errorChan <- err
 		case _ = <-n.Channels.Control:
 		}

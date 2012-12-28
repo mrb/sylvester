@@ -12,7 +12,7 @@ type ControlChan DataChan
 
 type Channels struct {
 	Data    DataChan
-	Errors  ErrorChan
+	Error  ErrorChan
 	Control ControlChan
 }
 
@@ -26,7 +26,7 @@ func NewGraph() *Graph {
 		Channels: &Channels{
 			Data:    make(DataChan, 1),
 			Control: make(ControlChan, 1),
-			Errors:  make(ErrorChan, 1),
+			Error:  make(ErrorChan, 1),
 		},
 	}
 }

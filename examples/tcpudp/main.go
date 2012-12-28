@@ -85,7 +85,7 @@ func main() {
 				udp.Write(data)
 			}
 		}
-		graph.Channels.Control <- []byte{0, 0, 0, 0}
+		graph.Control <- []byte{0, 0, 0, 0}
 	}
 	// Attaching the TCPbytwWriter to the output node.
 	_ = output.NewEvent(TCPbyteWriter)
@@ -108,10 +108,10 @@ func main() {
 
 	for {
 		select {
-		case <-graph.Channels.Control:
+		case <-graph.Control:
 			log.Print("Received Exit Signal, exiting")
 			os.Exit(0)
-		case err := <-graph.Channels.Errors:
+		case err := <-graph.Error:
 			if err == conn.ErrTCPConnection {
 				if rc < retries {
 					log.Print(err)
