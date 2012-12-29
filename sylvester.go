@@ -2,17 +2,18 @@ package sylvester
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 )
 
 type DataChan chan []byte
 type ErrorChan chan error
-type ControlChan DataChan
+type ControlChan chan []byte
 
 type Channels struct {
 	Data    DataChan
-	Error  ErrorChan
+	Error   ErrorChan
 	Control ControlChan
 }
 
@@ -26,11 +27,15 @@ func NewGraph() *Graph {
 		Channels: &Channels{
 			Data:    make(DataChan, 1),
 			Control: make(ControlChan, 1),
-			Error:  make(ErrorChan, 1),
+			Error:   make(ErrorChan, 1),
 		},
 	}
 }
 
 func newID() []byte {
 	return []byte(fmt.Sprintf("%d%d", time.Now().UnixNano(), rand.Intn(1000000)))
+}
+
+func (d DataChan) Word() {
+	log.Print("hmm")
 }

@@ -3,12 +3,12 @@ package sylvester
 import ()
 
 type Graph struct {
-	id       []byte
-	nodes    []*Node
-	edges    []*Edge
-	nodemap  map[*[]byte]*Node
-	edgemap  map[*[]byte]*Edge
-	IDGen    chan []byte
+	id      []byte
+	nodes   []*Node
+	edges   []*Edge
+	nodemap map[*[]byte]*Node
+	edgemap map[*[]byte]*Edge
+	IDGen   chan []byte
 	*Channels
 }
 
