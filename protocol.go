@@ -9,6 +9,24 @@ var (
 	}
 )
 
+// Convenient Access for Message Acess
+func Start() []byte {
+	return Messages["START"]
+}
+
+func Exit() []byte {
+	return Messages["EXIT"]
+}
+
+func Ping() []byte {
+	return Messages["PING"]
+}
+
+func Pong() []byte {
+	return Messages["PONG"]
+}
+
+// Functions for Channels
 func (p ControlChan) Start() {
 	p <- Messages["START"]
 }

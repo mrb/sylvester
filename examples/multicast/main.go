@@ -10,20 +10,28 @@ func main() {
 	graph := syl.NewGraph()
 
 	dataStream := graph.NewNode()
-	dataStreamFunc := func(dc syl.DataChan, cc syl.ControlChan, ec syl.ErrorChan) {
-		ticker := time.NewTicker(time.Millisecond * 10)
+	dataStreamFunc := func(c syl.Channels) {
+		ticker := time.NewTicker(time.Millisecond * 100)
 		for _ = range ticker.C {
 			log.Print("tick")
-			cc.Ping()
+			c.Control.Ping()
+		}
+
+		log.Print("here?")
+
+		select {
+		case <-c.Control:
+			log.Print("got it!")
+			ticker.Stop()
 		}
 	}
 	_ = dataStream.NewEvent(dataStreamFunc)
 
 	outputOne := graph.NewNode()
-	stdOutFunc := func(dc syl.DataChan, cc syl.ControlChan, ec syl.ErrorChan) {
+	stdOutFunc := func(c syl.Channels) {
 		for {
 			select {
-			case control := <-cc:
+			case control := <-c.Control:
 				log.Print("[1]", control, outputOne.Id())
 			}
 		}
@@ -31,20 +39,28 @@ func main() {
 	_ = outputOne.NewEvent(stdOutFunc)
 
 	outputTwo := graph.NewNode()
-	stdOutFunc2 := func(dc syl.DataChan, cc syl.ControlChan, ec syl.ErrorChan) {
+	stdOutFunc2 := func(c syl.Channels) {
+		d := 0
 		for {
 			select {
-			case control := <-cc:
-				log.Print("[2]", control, outputTwo.Id())
+			case control := <-c.Control:
+				d++
+				if d > 4 {
+					c.Control <- syl.Exit()
+					log.Print("blockin'")
+				} else {
+					log.Print("[2]", control, outputTwo.Id())
+				}
 			}
 		}
 	}
 	_ = outputTwo.NewEvent(stdOutFunc2)
 
 	graph.NewEdges(dataStream, []*syl.Node{outputOne, outputTwo})
+	graph.NewEdge(outputTwo, dataStream)
 
 	graph.Activate()
 
-	<-graph.Channels.Control
+	<-graph.Control
 	log.Print("Received Exit Signal, exiting")
 }

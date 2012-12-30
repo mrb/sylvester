@@ -15,6 +15,7 @@ type Channels struct {
 	Data    DataChan
 	Error   ErrorChan
 	Control ControlChan
+	NodeId  []byte
 }
 
 func NewGraph() *Graph {

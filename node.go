@@ -2,7 +2,7 @@ package sylvester
 
 import ()
 
-type Event func(DataChan, ControlChan, ErrorChan)
+type Event func(Channels)
 
 type Node struct {
 	id     []byte
@@ -16,14 +16,17 @@ func (n *Node) Id() *[]byte {
 }
 
 func NewNode() *Node {
+	nodeId := newID()
+
 	return &Node{
-		id:     newID(),
+		id:     nodeId,
 		data:   nil,
 		events: nil,
 		Channels: &Channels{
 			Data:    make(DataChan, 1),
 			Control: make(ControlChan, 1),
 			Error:   make(ErrorChan, 1),
+			NodeId:  nodeId,
 		},
 	}
 }
@@ -37,15 +40,9 @@ func (n *Node) NewEvent(newEvent Event) error {
 	return nil
 }
 
-func (n *Node) Activate(errorChan ErrorChan) {
+func (n *Node) Activate(c Channels) {
 	// Currently only handles one Event.
-	go n.events[0](n.Data, n.Control, n.Error)
-
-	for {
-		select {
-		case err := <-n.Error:
-			errorChan <- err
-		case _ = <-n.Control:
-		}
+	if len(n.events) > 0 {
+		go n.events[0](*n.Channels)
 	}
 }

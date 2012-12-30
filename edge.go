@@ -28,7 +28,7 @@ func NewEdges(anode *Node, bnodes []*Node) *Edge {
 	}
 }
 
-func (e *Edge) Activate(errorChan ErrorChan) {
+func (e *Edge) Activate(c Channels) {
 	go func() {
 		for {
 			select {
@@ -39,6 +39,10 @@ func (e *Edge) Activate(errorChan ErrorChan) {
 			case control := <-e.anode.Control:
 				for _, bnode := range e.bnodes {
 					bnode.Control <- control
+				}
+			case err := <-e.anode.Error:
+				for _, bnode := range e.bnodes {
+					bnode.Error <- err
 				}
 			}
 		}

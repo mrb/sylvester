@@ -1,7 +1,5 @@
 package sylvester
 
-import ()
-
 type Graph struct {
 	id      []byte
 	nodes   []*Node
@@ -18,10 +16,10 @@ func (g *Graph) Id() *[]byte {
 
 func (g *Graph) Activate() {
 	for _, node := range g.nodemap {
-		go node.Activate(g.Error)
+		go node.Activate(*g.Channels)
 	}
 	for _, edge := range g.edges {
-		go edge.Activate(g.Error)
+		go edge.Activate(*g.Channels)
 	}
 }
 
