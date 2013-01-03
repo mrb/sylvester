@@ -5,19 +5,22 @@ import (
 	conn "github.com/mrb/sylvester/connections"
 	"log"
 	"os"
+	"reflect"
 )
 
 func main() {
 	graph := syl.NewGraph()
 
 	input := graph.NewNode()
-	input.NewEvent(UDPbyteReader)
+	input.NewAsyncEvent(Retryer)
+	input.NewAsyncEvent(UDPbyteReader)
 
 	output := graph.NewNode()
-	output.NewEvent(TCPbyteWriter)
+	output.NewAsyncEvent(Retryer)
+	output.NewAsyncEvent(TCPbyteWriter)
 
 	errorHandler := graph.NewNode()
-	errorHandler.NewEvent(ErrorHandler)
+	errorHandler.NewAsyncEvent(ErrorHandler)
 
 	graph.NewEdge(input, output)
 	graph.NewEdge(input, errorHandler)
@@ -34,7 +37,30 @@ func main() {
 	}
 }
 
-func Restarter(c syl.Channels) {
+func Retryer(c syl.Channels) {
+	for {
+		select {
+		case sig := <-c.Control:
+			log.Print("!", sig)
+		}
+	}
+}
+
+func TCPbyteWriter(c syl.Channels) {
+	udp, err := conn.UdpConnect("localhost:2323")
+	if err != nil {
+		er := syl.NewEventError(c.NodeId, err)
+		log.Print(reflect.TypeOf(er))
+		c.Error <- er
+	}
+
+	for {
+		select {
+		case data := <-c.Data:
+			log.Printf("Writing %d bytes to UDP", len(data))
+			udp.Write(data)
+		}
+	}
 }
 
 func UDPbyteReader(c syl.Channels) {
@@ -59,35 +85,21 @@ func UDPbyteReader(c syl.Channels) {
 	}
 }
 
-func TCPbyteWriter(c syl.Channels) {
-	udp, err := conn.UdpConnect("localhost:2323")
-	if err != nil {
-		c.Error <- syl.NewEventError(c.NodeId, err)
-	}
-
-	for {
-		select {
-		case data := <-c.Data:
-			log.Printf("Writing %d bytes to UDP", len(data))
-			udp.Write(data)
-		}
-	}
-}
-
 func ErrorHandler(c syl.Channels) {
 	e := 0
 	r := 4
 	for {
 		select {
 		case err := <-c.Error:
-			log.Print(err)
-			if err == conn.ErrTCPConnection {
-				e += 1
-				if e > r {
-					os.Exit(3)
-				}
-				c.Control <- []byte{0, 0}
+			log.Print("?", err.Error())
+			//if err.Error() == conn.ErrTCPConnection {
+			log.Print(e, r)
+			e += 1
+			if e > r {
+				os.Exit(3)
 			}
+			c.Control <- []byte{0, 0}
+			//}
 		}
 	}
 }

@@ -16,7 +16,7 @@ func (g *Graph) Id() *[]byte {
 
 func (g *Graph) Activate() {
 	for _, node := range g.nodemap {
-		go node.Activate(*g.Channels)
+		go node.Activate()
 	}
 	for _, edge := range g.edges {
 		go edge.Activate(*g.Channels)

@@ -5,9 +5,10 @@ import ()
 type Event func(Channels)
 
 type Node struct {
-	id     []byte
-	data   []byte
-	events []Event
+	id          []byte
+	data        []byte
+	syncEvents  []Event
+	asyncEvents []Event
 	*Channels
 }
 
@@ -19,9 +20,10 @@ func NewNode() *Node {
 	nodeId := newID()
 
 	return &Node{
-		id:     nodeId,
-		data:   nil,
-		events: nil,
+		id:          nodeId,
+		data:        nil,
+		asyncEvents: nil,
+		syncEvents:  nil,
 		Channels: &Channels{
 			Data:    make(DataChan, 1),
 			Control: make(ControlChan, 1),
@@ -35,14 +37,26 @@ func (n *Node) DataChan() DataChan {
 	return n.Data
 }
 
-func (n *Node) NewEvent(newEvent Event) error {
-	n.events = append(n.events, newEvent)
+func (n *Node) NewAsyncEvent(newEvent Event) error {
+	n.asyncEvents = append(n.asyncEvents, newEvent)
 	return nil
 }
 
-func (n *Node) Activate(c Channels) {
-	// Currently only handles one Event.
-	if len(n.events) > 0 {
-		go n.events[0](*n.Channels)
+func (n *Node) NewSyncEvent(newEvent Event) error {
+	n.syncEvents = append(n.syncEvents, newEvent)
+	return nil
+}
+
+func (n *Node) Activate() {
+	if len(n.asyncEvents) > 0 {
+		for _, event := range n.asyncEvents {
+			go event(*n.Channels)
+		}
+	}
+
+	if len(n.syncEvents) > 0 {
+		for _, event := range n.syncEvents {
+			event(*n.Channels)
+		}
 	}
 }

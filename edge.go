@@ -1,6 +1,8 @@
 package sylvester
 
-import ()
+import (
+	"log"
+)
 
 type Edge struct {
 	id     []byte
@@ -29,6 +31,10 @@ func NewEdges(anode *Node, bnodes []*Node) *Edge {
 }
 
 func (e *Edge) Activate(c Channels) {
+	for _, bnode := range e.bnodes {
+		log.Printf("Connecting: %s - %s", e.anode.Id(), bnode.Id())
+	}
+
 	go func() {
 		for {
 			select {

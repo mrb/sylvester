@@ -1,3 +1,5 @@
+// This is preserved for history, it's some of my first notes on the project.
+
 ```go
 /*
 A framework for creating networking applications that can be expressed

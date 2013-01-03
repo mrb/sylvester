@@ -10,19 +10,19 @@ var (
 )
 
 // Convenient Access for Message Acess
-func Start() []byte {
+func NodeStart() []byte {
 	return Messages["START"]
 }
 
-func Exit() []byte {
+func NodeExit() []byte {
 	return Messages["EXIT"]
 }
 
-func Ping() []byte {
+func NodePing() []byte {
 	return Messages["PING"]
 }
 
-func Pong() []byte {
+func NodePong() []byte {
 	return Messages["PONG"]
 }
 
