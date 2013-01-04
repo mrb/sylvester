@@ -56,7 +56,7 @@ func (n *Node) Activate() {
 
 	if len(n.syncEvents) > 0 {
 		for _, event := range n.syncEvents {
-			event(*n.Channels)
+			go event(*n.Channels)
 		}
 	}
 }
