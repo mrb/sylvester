@@ -1,6 +1,8 @@
 package sylvester
 
-import ()
+import (
+	"bytes"
+)
 
 type Event func(Channels)
 
@@ -49,14 +51,32 @@ func (n *Node) NewSyncEvent(newEvent Event) error {
 
 func (n *Node) Activate() {
 	if len(n.asyncEvents) > 0 {
-		for _, event := range n.asyncEvents {
-			go event(*n.Channels)
-		}
+		n.StartAsyncEvents()
 	}
 
 	if len(n.syncEvents) > 0 {
-		for _, event := range n.syncEvents {
-			event(*n.Channels)
+		n.StartSyncEvents()
+	}
+}
+
+func (n *Node) StartAsyncEvents() {
+	for _, event := range n.asyncEvents {
+		go event(*n.Channels)
+	}
+}
+
+func (n *Node) StartSyncEvents() {
+	for _, event := range n.syncEvents {
+		go event(*n.Channels)
+		select {
+		case control := <-n.Control:
+			if bytes.Equal(control, NodeNext()) {
+
+      } else if bytes.Equal(control, NodeSyncEventRestart()) {
+        n.StartSyncEvents()
+			} else {
+				n.Control <- control
+			}
 		}
 	}
 }
