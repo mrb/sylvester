@@ -6,6 +6,8 @@ var (
 		"EXIT":  {0, 1},
 		"PING":  {0, 2},
 		"PONG":  {0, 3},
+		"NEXT":  {0, 4},
+		"SYNCRESTART":  {0, 5},
 	}
 )
 
@@ -26,6 +28,14 @@ func NodePong() []byte {
 	return Messages["PONG"]
 }
 
+func NodeNext() []byte {
+	return Messages["NEXT"]
+}
+
+func NodeSyncEventRestart() []byte {
+	return Messages["SYNCRESTART"]
+}
+
 // Functions for Channels
 func (p ControlChan) Start() {
 	p <- Messages["START"]
@@ -41,4 +51,8 @@ func (p ControlChan) Ping() {
 
 func (p ControlChan) Pong() {
 	p <- Messages["PONG"]
+}
+
+func (p ControlChan) Next() {
+	p <- Messages["NEXT"]
 }
