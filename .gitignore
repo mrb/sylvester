@@ -1,3 +1,4 @@
 examples/multicast/multicast
 examples/tcpudp/tcpudp
 examples/supervisor/supervisor
+examples/syncasync/syncasync
