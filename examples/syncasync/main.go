@@ -15,7 +15,22 @@ func main() {
 	node := graph.NewNode()
 
 	node.NewAsyncEvent(Starter)
-	node.NewAsyncEvent(Watcher)
+
+	node.NewAsyncEvent(func(c syl.Channels, g syl.ControlChan) {
+		for {
+			select {
+			case control := <-c.Control:
+				switch {
+				case bytes.Equal(control, syl.NodeExit()):
+					g.Exit()
+				case bytes.Equal(control, syl.NodeNext()):
+					node.NextSyncEvent()
+				default:
+					log.Print("Unhandled control event: ", control)
+				}
+			}
+		}
+	})
 
 	node.NewAsyncEvent(ASyncLogger)
 	node.NewAsyncEvent(ASyncLogger)
@@ -28,16 +43,19 @@ func main() {
 	graph.Activate()
 
 	<-graph.Control
+	log.Print("Received EXIT, exiting in 100ms")
+	<-time.After(100 * time.Millisecond)
+	os.Exit(0)
 }
 
-func Starter(c syl.Channels) {
+func Starter(c syl.Channels, g syl.ControlChan) {
 	for cd := 0; cd < 100; cd++ {
 		c.Data <- []byte{byte(cd)}
 	}
-	c.Control <- syl.NodeExit()
+	c.Control.Exit()
 }
 
-func ASyncLogger(c syl.Channels) {
+func ASyncLogger(c syl.Channels, g syl.ControlChan) {
 	for {
 		select {
 		case data := <-c.Data:
@@ -47,45 +65,29 @@ func ASyncLogger(c syl.Channels) {
 	}
 }
 
-func SyncLogger(c syl.Channels) {
+func SyncLogger(c syl.Channels, g syl.ControlChan) {
 	select {
 	case data := <-c.Data:
 		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
 		log.Print("           s", data)
-		c.Control <- syl.NodeNext()
+		c.Control.Next()
 	}
 }
 
-func SyncLogger2(c syl.Channels) {
+func SyncLogger2(c syl.Channels, g syl.ControlChan) {
 	select {
 	case data := <-c.Data:
 		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
 		log.Print("           s2", data)
-		c.Control <- syl.NodeNext()
+		c.Control.Next()
 	}
 }
 
-func SyncLogger3(c syl.Channels) {
+func SyncLogger3(c syl.Channels, g syl.ControlChan) {
 	select {
 	case data := <-c.Data:
 		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
 		log.Print("           s3", data)
-		c.Control <- syl.NodeSyncEventRestart()
-	}
-}
-
-func Watcher(c syl.Channels) {
-	for {
-		select {
-		case control := <-c.Control:
-			if bytes.Equal(control, syl.NodeExit()) {
-				log.Print("Received EXIT, exiting in 100ms")
-				<-time.After(500 * time.Millisecond)
-				os.Exit(0)
-			} else {
-				c.Control <- control
-				<-time.After(1 * time.Millisecond)
-			}
-		}
+		c.Control.Next()
 	}
 }

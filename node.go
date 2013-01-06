@@ -1,16 +1,22 @@
 package sylvester
 
 import (
-	"bytes"
+	"sync"
 )
 
-type Event func(Channels)
+var (
+	syncPositionMutex = &sync.Mutex{}
+)
+
+type Event func(Channels, ControlChan)
 
 type Node struct {
-	id          []byte
-	data        []byte
-	syncEvents  []Event
-	asyncEvents []Event
+	id           []byte
+	data         []byte
+	syncEvents   []Event
+	syncPosition int
+	asyncEvents  []Event
+	graph        *Graph
 	*Channels
 }
 
@@ -18,20 +24,17 @@ func (n *Node) Id() *[]byte {
 	return &n.id
 }
 
-func NewNode() *Node {
+func NewNode(g *Graph) *Node {
 	nodeId := newID()
 
 	return &Node{
-		id:          nodeId,
-		data:        nil,
-		asyncEvents: nil,
-		syncEvents:  nil,
-		Channels: &Channels{
-			Data:    make(DataChan, 1),
-			Control: make(ControlChan, 1),
-			Error:   make(ErrorChan, 1),
-			NodeId:  nodeId,
-		},
+		id:           nodeId,
+		data:         nil,
+		asyncEvents:  nil,
+		syncEvents:   nil,
+		syncPosition: 0,
+		Channels:     NewChannels(),
+		graph:        g,
 	}
 }
 
@@ -61,22 +64,22 @@ func (n *Node) Activate() {
 
 func (n *Node) StartAsyncEvents() {
 	for _, event := range n.asyncEvents {
-		go event(*n.Channels)
+		go event(*n.Channels, n.graph.Control)
 	}
 }
 
 func (n *Node) StartSyncEvents() {
-	for _, event := range n.syncEvents {
-		go event(*n.Channels)
-		select {
-		case control := <-n.Control:
-			if bytes.Equal(control, NodeNext()) {
+	go n.syncEvents[n.syncPosition](*n.Channels, n.graph.Control)
+}
 
-      } else if bytes.Equal(control, NodeSyncEventRestart()) {
-        n.StartSyncEvents()
-			} else {
-				n.Control <- control
-			}
-		}
+func (n *Node) NextSyncEvent() {
+	syncPositionMutex.Lock()
+	sp := n.syncPosition
+	if sp == (len(n.syncEvents) - 1) {
+		n.syncPosition = 0
+	} else {
+		n.syncPosition++
 	}
+	go n.syncEvents[n.syncPosition](*n.Channels, n.graph.Control)
+	syncPositionMutex.Unlock()
 }

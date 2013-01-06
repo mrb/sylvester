@@ -43,7 +43,7 @@ func (g *Graph) NewEdges(anode *Node, bnodes []*Node) *Edge {
 }
 
 func (g *Graph) NewNode() *Node {
-	node := NewNode()
+	node := NewNode(g)
 
 	g.nodes = append(g.nodes, node)
 	g.nodemap[node.Id()] = node
