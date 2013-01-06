@@ -27,21 +27,7 @@ func main() {
 
 	node.NewAsyncEvent(Starter)
 
-	node.NewAsyncEvent(func(c syl.Channels, g syl.ControlChan) {
-		for {
-			select {
-			case control := <-c.Control:
-				switch {
-				case bytes.Equal(control, syl.NodeExit()):
-					g.Exit()
-				case bytes.Equal(control, syl.NodeNext()):
-					node.NextSyncEvent()
-				default:
-					log.Print("Unhandled control event: ", control)
-				}
-			}
-		}
-	})
+	node.NewAsyncEvent(Watcher(node))
 
 	node.NewAsyncEvent(ASyncLogger)
 	node.NewAsyncEvent(ASyncLogger)
@@ -66,6 +52,24 @@ func Starter(c syl.Channels, g syl.ControlChan) {
 		}
 	}
 	c.Control.Exit()
+}
+
+func Watcher(node *syl.Node) syl.Event {
+	return func(c syl.Channels, g syl.ControlChan) {
+		for {
+			select {
+			case control := <-c.Control:
+				switch {
+				case bytes.Equal(control, syl.NodeExit()):
+					g.Exit()
+				case bytes.Equal(control, syl.NodeNext()):
+					node.NextSyncEvent()
+				default:
+					log.Print("Unhandled control event: ", control)
+				}
+			}
+		}
+	}
 }
 
 func ASyncLogger(c syl.Channels, g syl.ControlChan) {
