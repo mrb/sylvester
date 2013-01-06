@@ -1,13 +1,5 @@
 package sylvester
 
-import (
-	"sync"
-)
-
-var (
-	syncPositionMutex = &sync.Mutex{}
-)
-
 type Event func(Channels, ControlChan)
 
 type Node struct {
@@ -73,7 +65,6 @@ func (n *Node) StartSyncEvents() {
 }
 
 func (n *Node) NextSyncEvent() {
-	syncPositionMutex.Lock()
 	sp := n.syncPosition
 	if sp == (len(n.syncEvents) - 1) {
 		n.syncPosition = 0
@@ -81,5 +72,4 @@ func (n *Node) NextSyncEvent() {
 		n.syncPosition++
 	}
 	go n.syncEvents[n.syncPosition](*n.Channels, n.graph.Control)
-	syncPositionMutex.Unlock()
 }

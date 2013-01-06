@@ -49,8 +49,10 @@ func main() {
 }
 
 func Starter(c syl.Channels, g syl.ControlChan) {
-	for cd := 0; cd < 100; cd++ {
-		c.Data <- []byte{byte(cd)}
+	for { //
+		for cd := 0; cd < 100; cd++ {
+			c.Data <- []byte{byte(cd)}
+		}
 	}
 	c.Control.Exit()
 }
