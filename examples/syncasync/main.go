@@ -27,7 +27,7 @@ func main() {
 
 	node.NewAsyncEvent(Starter)
 
-	node.NewAsyncEvent(Watcher(node))
+	node.NewAsyncEvent(Watcher(node, graph))
 
 	node.NewAsyncEvent(ASyncLogger)
 	node.NewAsyncEvent(ASyncLogger)
@@ -45,7 +45,7 @@ func main() {
 	os.Exit(0)
 }
 
-func Starter(c syl.Channels, g syl.ControlChan) {
+func Starter(c syl.Channels) {
 	for {
 		for cd := 0; cd < 100; cd++ {
 			c.Data <- []byte{byte(cd)}
@@ -54,14 +54,14 @@ func Starter(c syl.Channels, g syl.ControlChan) {
 	c.Control.Exit()
 }
 
-func Watcher(node *syl.Node) syl.Event {
-	return func(c syl.Channels, g syl.ControlChan) {
+func Watcher(node *syl.Node, graph *syl.Graph) syl.Event {
+	return func(c syl.Channels) {
 		for {
 			select {
 			case control := <-c.Control:
 				switch {
 				case bytes.Equal(control, syl.NodeExit()):
-					g.Exit()
+					graph.Control.Exit()
 				case bytes.Equal(control, syl.NodeNext()):
 					node.NextSyncEvent()
 				default:
@@ -72,7 +72,7 @@ func Watcher(node *syl.Node) syl.Event {
 	}
 }
 
-func ASyncLogger(c syl.Channels, g syl.ControlChan) {
+func ASyncLogger(c syl.Channels) {
 	for {
 		select {
 		case data := <-c.Data:
@@ -82,7 +82,7 @@ func ASyncLogger(c syl.Channels, g syl.ControlChan) {
 	}
 }
 
-func SyncLogger(c syl.Channels, g syl.ControlChan) {
+func SyncLogger(c syl.Channels) {
 	select {
 	case data := <-c.Data:
 		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
@@ -91,7 +91,7 @@ func SyncLogger(c syl.Channels, g syl.ControlChan) {
 	}
 }
 
-func SyncLogger2(c syl.Channels, g syl.ControlChan) {
+func SyncLogger2(c syl.Channels) {
 	select {
 	case data := <-c.Data:
 		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
@@ -100,7 +100,7 @@ func SyncLogger2(c syl.Channels, g syl.ControlChan) {
 	}
 }
 
-func SyncLogger3(c syl.Channels, g syl.ControlChan) {
+func SyncLogger3(c syl.Channels) {
 	select {
 	case data := <-c.Data:
 		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)

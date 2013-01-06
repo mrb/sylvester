@@ -1,6 +1,6 @@
 package sylvester
 
-type Event func(Channels, ControlChan)
+type Event func(Channels)
 
 type Node struct {
 	id           []byte
@@ -56,12 +56,12 @@ func (n *Node) Activate() {
 
 func (n *Node) StartAsyncEvents() {
 	for _, event := range n.asyncEvents {
-		go event(*n.Channels, n.graph.Control)
+		go event(*n.Channels)
 	}
 }
 
 func (n *Node) StartSyncEvents() {
-	go n.syncEvents[n.syncPosition](*n.Channels, n.graph.Control)
+	go n.syncEvents[n.syncPosition](*n.Channels)
 }
 
 func (n *Node) NextSyncEvent() {
@@ -71,5 +71,5 @@ func (n *Node) NextSyncEvent() {
 	} else {
 		n.syncPosition++
 	}
-	go n.syncEvents[n.syncPosition](*n.Channels, n.graph.Control)
+	go n.syncEvents[n.syncPosition](*n.Channels)
 }
