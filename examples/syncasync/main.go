@@ -1,3 +1,14 @@
+/*
+
+An example illustrating the use of async and sync events within the same node.
+The "Starter" event pushes bits into the data channel, and the async logger is
+a simple consume-and-log event. The sync events each consume a bit and log, and
+signal when they are done to trigger the next sync event. The results of this
+example will show that the async events are returned in the order dictated by
+the random amount of time they sleep, while the sync events always execute and
+print bits in a guaranteed order.
+
+*/
 package main
 
 import (
@@ -49,7 +60,7 @@ func main() {
 }
 
 func Starter(c syl.Channels, g syl.ControlChan) {
-	for { //
+	for {
 		for cd := 0; cd < 100; cd++ {
 			c.Data <- []byte{byte(cd)}
 		}
