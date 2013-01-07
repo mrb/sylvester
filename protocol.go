@@ -2,11 +2,11 @@ package sylvester
 
 var (
 	Messages = map[string][]byte{
-		"START":       {0, 0},
-		"EXIT":        {0, 1},
-		"PING":        {0, 2},
-		"PONG":        {0, 3},
-		"NEXT":        {0, 4},
+		"START": {0, 0},
+		"EXIT":  {0, 1},
+		"PING":  {0, 2},
+		"PONG":  {0, 3},
+		"NEXT":  {0, 4},
 	}
 )
 

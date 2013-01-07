@@ -39,8 +39,22 @@ func (n *Node) NewAsyncEvent(newEvent Event) error {
 	return nil
 }
 
+func (n *Node) NewAsyncEvents(newEvents ...Event) error {
+	for _, event := range newEvents {
+		n.NewAsyncEvent(event)
+	}
+	return nil
+}
+
 func (n *Node) NewSyncEvent(newEvent Event) error {
 	n.syncEvents = append(n.syncEvents, newEvent)
+	return nil
+}
+
+func (n *Node) NewSyncEvents(newEvents ...Event) error {
+	for _, event := range newEvents {
+		n.NewSyncEvent(event)
+	}
 	return nil
 }
 

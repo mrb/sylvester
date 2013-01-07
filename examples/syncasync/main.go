@@ -33,16 +33,12 @@ func main() {
 
 	// You can add a lot of events to a node. They interact with each other in
 	// different ways. 3 "asyncLogger" Event functions are instantiated here.
-	node.NewAsyncEvent(makeAsyncLogger("a0"))
-	node.NewAsyncEvent(makeAsyncLogger("a1"))
-	node.NewAsyncEvent(makeAsyncLogger("a2"))
+	node.NewAsyncEvents(makeAsyncLogger("a0"), makeAsyncLogger("a1"), makeAsyncLogger("a2"))
 
 	// These three Events are different - they're "sync". They'll get executed
 	// in order and their scheduling is controlled by an external function. In 
 	// this case, that's the watcher Event.
-	node.NewSyncEvent(makeSyncLogger("s0"))
-	node.NewSyncEvent(makeSyncLogger("s1"))
-	node.NewSyncEvent(makeSyncLogger("s2"))
+	node.NewSyncEvents(makeSyncLogger("s0"), makeSyncLogger("s1"), makeSyncLogger("s2"))
 
 	// "Activate" is Sylvester's word for "start the flow of data."
 	graph.Activate()
