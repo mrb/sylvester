@@ -1,14 +1,10 @@
 /*
 
-An example illustrating the use of async and sync events within the same node.
-The "Starter" event pushes bits into the data channel, and the async logger is
-a simple consume-and-log event. The sync events each consume a bit and log, and
-signal when they are done to trigger the next sync event. The results of this
-example will show that the async events are returned in the order dictated by
-the random amount of time they sleep, while the sync events always execute and
-print bits in a guaranteed order.
+syncasync - a simple program to show sync and async Events cohabiting in the
+            same node.
 
 */
+
 package main
 
 import (
@@ -21,40 +17,61 @@ import (
 )
 
 func main() {
+	// A program needs at least one graph
 	graph := syl.NewGraph()
 
+	// A graph needs at least one node
 	node := graph.NewNode()
 
-	node.NewAsyncEvent(Starter)
+	// A node needs some Events! That's where stuff happens.
+	// This one's simple - it streams bytes of data. It's below.
+	node.NewAsyncEvent(dataStreamer)
 
-	node.NewAsyncEvent(Watcher(node, graph))
+	// This Event is important - we pass it the node and the graph, and we
+	// expect it to do important work.
+	node.NewAsyncEvent(makeWatcher(node, graph))
 
-	node.NewAsyncEvent(ASyncLogger)
-	node.NewAsyncEvent(ASyncLogger)
-	node.NewAsyncEvent(ASyncLogger)
+	// You can add a lot of events to a node. They interact with each other in
+	// different ways. 3 "asyncLogger" Event functions are instantiated here.
+	node.NewAsyncEvent(makeAsyncLogger("a0"))
+	node.NewAsyncEvent(makeAsyncLogger("a1"))
+	node.NewAsyncEvent(makeAsyncLogger("a2"))
 
-	node.NewSyncEvent(SyncLogger)
-	node.NewSyncEvent(SyncLogger2)
-	node.NewSyncEvent(SyncLogger3)
+	// These three Events are different - they're "sync". They'll get executed
+	// in order and their scheduling is controlled by an external function. In 
+	// this case, that's the watcher Event.
+	node.NewSyncEvent(makeSyncLogger("s0"))
+	node.NewSyncEvent(makeSyncLogger("s1"))
+	node.NewSyncEvent(makeSyncLogger("s2"))
 
+	// "Activate" is Sylvester's word for "start the flow of data."
 	graph.Activate()
 
+	// Block on the graph's Control channel receive - a simple naive mechanism
+	// to ensure everything else stays running. We'll send it a signal from the
+	// watcher function (that's the reason we pass the grap into its closure) and
+	// then the app will wait for cleanup before exiting.
 	<-graph.Control
 	log.Print("Received EXIT, exiting in 100ms")
 	<-time.After(100 * time.Millisecond)
 	os.Exit(0)
 }
 
-func Starter(c syl.Channels) {
+// Loop forever, streaming bytes.
+func dataStreamer(c syl.Channels) {
 	for {
-		for cd := 0; cd < 100; cd++ {
+		for cd := 0; ; cd++ {
 			c.Data <- []byte{byte(cd)}
 		}
 	}
 	c.Control.Exit()
 }
 
-func Watcher(node *syl.Node, graph *syl.Graph) syl.Event {
+// This function gets a pointer to the Node and the Graph passed in
+// to its closure. This is up to the user's discretion. Control signals are
+// handled by the watcher, including scheduling sync events and handling Exit
+// signals.
+func makeWatcher(node *syl.Node, graph *syl.Graph) syl.Event {
 	return func(c syl.Channels) {
 		for {
 			select {
@@ -72,39 +89,30 @@ func Watcher(node *syl.Node, graph *syl.Graph) syl.Event {
 	}
 }
 
-func ASyncLogger(c syl.Channels) {
-	for {
-		select {
-		case data := <-c.Data:
-			<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
-			log.Print("a", data)
+// Returns a function that will loop forever, pull data off the data
+// channel, and print it.
+func makeAsyncLogger(name string) syl.Event {
+	return func(c syl.Channels) {
+		for {
+			select {
+			case data := <-c.Data:
+				<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
+				log.Print(name, data)
+			}
 		}
 	}
 }
 
-func SyncLogger(c syl.Channels) {
-	select {
-	case data := <-c.Data:
-		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
-		log.Print("           s", data)
-		c.Control.Next()
-	}
-}
-
-func SyncLogger2(c syl.Channels) {
-	select {
-	case data := <-c.Data:
-		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
-		log.Print("           s2", data)
-		c.Control.Next()
-	}
-}
-
-func SyncLogger3(c syl.Channels) {
-	select {
-	case data := <-c.Data:
-		<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
-		log.Print("           s3", data)
-		c.Control.Next()
+// Returns a function that will run once, blocking until it receives data,
+// and then printing it out. When it's done, it signals the Control channel
+// to proceed to the next sync Event.
+func makeSyncLogger(name string) syl.Event {
+	return func(c syl.Channels) {
+		select {
+		case data := <-c.Data:
+			<-time.After(time.Duration(rand.Int31n(10)) * time.Millisecond)
+			log.Print("       ", name, data)
+			c.Control.Next()
+		}
 	}
 }
