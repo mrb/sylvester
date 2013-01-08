@@ -39,7 +39,8 @@ func tcpConnectAndRead(c syl.Channels) {
 	for {
 		select {
 		case <-c.Control:
-			tcpConnectAndRead(c)
+			_, tcpConnector := maketcpConnecter()
+			go tcpConnector(c)
 		}
 	}
 }
@@ -47,6 +48,7 @@ func tcpConnectAndRead(c syl.Channels) {
 func maketcpConnecter() (tcp *net.TCPConn, event syl.Event) {
 	event = func(c syl.Channels) {
 		var err error
+    log.Print("tcp? ", tcp)
 		tcp, err = conn.TcpConnect("localhost:2323")
 
 		if err != nil {
@@ -66,7 +68,7 @@ func maketcpReader(tcp *net.TCPConn) (event syl.Event) {
 			dlen, err := tcp.Read(data)
 			if err != nil {
 				log.Print(err)
-				c.Error <- syl.NewEventError(c.NodeId, err)
+				c.Error <- err
 				return
 			}
 			log.Printf("...read %d bytes from TCP", dlen)
